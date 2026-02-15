@@ -125,6 +125,12 @@
                             </div>
 
                             <div class="flex justify-end gap-4 pt-6">
+
+                                <!--add sf -->
+                                 <button type="button" @click="showDeleteModal = true" :disabled="isLoading"
+                                     class="px-6 py-3 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50">
+                                     ลบบัญชี
+                                 </button>
                                 <button type="button" @click="resetForm" :disabled="isLoading"
                                     class="px-6 py-3 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50">
                                     ยกเลิก
@@ -143,6 +149,13 @@
                                 </button>
                             </div>
                         </form>
+                         <DeleteAccountModal
+                            :isOpen="showDeleteModal"
+                            :isLoading="isDeleting"
+                            @confirm="handleDeleteAccountConfirm"
+                            @cancel="resetDeleteForm">
+                        </DeleteAccountModal>
+
                     </div>
                 </main>
             </div>
@@ -155,6 +168,7 @@ import { ref, onMounted, reactive } from 'vue'
 import { useAuth } from '~/composables/useAuth';
 import { useToast } from '~/composables/useToast';
 import ProfileSidebar from '~/components/ProfileSidebar.vue';
+import DeleteAccountModal from '~/components/DeleteAccountModal.vue'; 
 import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 
@@ -172,6 +186,16 @@ const fileInput = ref(null)
 const previewUrl = ref('')
 const isLoading = ref(false)
 const showNameWarning = ref(false);
+
+// add sf 
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
+
+const deleteForm = reactive({
+    reason: '',
+    password: ''
+});
+// add sf 
 
 const form = reactive({
     firstName: '',
@@ -277,7 +301,7 @@ async function handleProfileUpdate() {
             form.newPassword = '';
             form.confirmNewPassword = '';
         }
-
+         
         toast.success(
             'อัปเดตสำเร็จ!',
             passwordChanged ? 'โปรไฟล์และรหัสผ่านของคุณถูกบันทึกแล้ว' : 'ข้อมูลโปรไฟล์ของคุณถูกบันทึกแล้ว'
@@ -294,6 +318,35 @@ async function handleProfileUpdate() {
         form.profilePictureFile = null;
     }
 }
+
+const resetDeleteForm = () => {
+    deleteForm.reason = '';
+    deleteForm.password = '';
+    showDeleteModal.value = false;
+};
+
+const handleDeleteAccountConfirm = async (data) => {
+    isDeleting.value = true;
+    try {
+        await $api('/users/me/request-delete', {
+            method: 'DELETE',
+            body: {
+                reason: data.reason,
+                password: data.password
+            }
+        });
+
+        toast.success('ขอลบบัญชีสำเร็จ', 'บัญชีของคุณจะถูกลบในอีก 90 วัน');
+        showDeleteModal.value = false;
+        setTimeout(() => navigateTo('/'), 2000);
+    } catch (err) {
+        const message = err.data?.message || err.message || 'ไม่สามารถลบบัญชีได้';
+        toast.error('เกิดข้อผิดพลาด', message);
+    } finally {
+        isDeleting.value = false;
+    }
+};
+
 </script>
 
 <style scoped>
