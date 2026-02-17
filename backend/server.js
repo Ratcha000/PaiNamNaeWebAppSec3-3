@@ -26,7 +26,8 @@ const corsOptions = {
         'http://localhost:3001',
         'http://localhost:3000',
         'https://amazing-crisp-9bcb1a.netlify.app',
-        'https://cssekku3-3.cpkku.com' 
+        'https://cssekku3-3.cpkku.com',  
+        'https://painamnaewebappsec3-3-production.up.railway.app' 
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
