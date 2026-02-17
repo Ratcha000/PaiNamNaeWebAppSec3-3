@@ -179,7 +179,7 @@ definePageMeta({
 });
 
 const { $api } = useNuxtApp()
-const { user: userCookie } = useAuth()
+const { user: userCookie, logout } = useAuth()
 const { toast } = useToast();
 
 const fileInput = ref(null)
@@ -338,7 +338,9 @@ const handleDeleteAccountConfirm = async (data) => {
 
         toast.success('ขอลบบัญชีสำเร็จ', 'บัญชีของคุณจะถูกลบในอีก 90 วัน');
         showDeleteModal.value = false;
-        setTimeout(() => navigateTo('/'), 2000);
+        setTimeout(() => {
+            logout();
+        }, 2000);
     } catch (err) {
         const message = err.data?.message || err.message || 'ไม่สามารถลบบัญชีได้';
         toast.error('เกิดข้อผิดพลาด', message);
