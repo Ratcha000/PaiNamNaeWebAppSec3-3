@@ -127,7 +127,10 @@
                             <div class="flex justify-end gap-4 pt-6">
 
                                 <!--add sf -->
-                                 
+                             <button type="button" @click="showDeleteModal = true" :disabled="isLoading"
+                                     class="px-6 py-3 text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50">
+                                     ลบบัญชี
+                                 </button>    
 
                                 <button type="button" @click="resetForm" :disabled="isLoading"
                                     class="px-6 py-3 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50">
@@ -148,7 +151,12 @@
                             </div>
                         </form>
                          <!--add sf -->
-
+                        <DeleteAccountModal
+                            :isOpen="showDeleteModal"
+                            :isLoading="isDeleting"
+                            @confirm="handleDeleteAccountConfirm"
+                            @cancel="resetDeleteForm">
+                        </DeleteAccountModal>
                     </div>
                 </main>
             </div>
@@ -181,7 +189,13 @@ const isLoading = ref(false)
 const showNameWarning = ref(false);
 
 // add sf 
+const showDeleteModal = ref(false);
+const isDeleting = ref(false);
 
+const deleteForm = reactive({
+    reason: '',
+    password: ''
+});
 // add sf 
 
 const form = reactive({
