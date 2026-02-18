@@ -307,11 +307,35 @@ async function handleProfileUpdate() {
 }
 
 // add sf
-
-
+const resetDeleteForm = () => {
+    deleteForm.reason = '';
+    deleteForm.password = '';
+    showDeleteModal.value = false;
+};
 //add sf
+const handleDeleteAccountConfirm = async (data) => {
+    isDeleting.value = true;
+    try {
+        await $api('/users/me/request-delete', {
+            method: 'DELETE',
+            body: {
+                reason: data.reason,
+                password: data.password
+            }
+        });
 
-
+        toast.success('ขอลบบัญชีสำเร็จ', 'บัญชีของคุณจะถูกลบในอีก 90 วัน');
+        showDeleteModal.value = false;
+        setTimeout(() => {
+            logout();
+        }, 2000);
+    } catch (err) {
+        const message = err.data?.message || err.message || 'ไม่สามารถลบบัญชีได้';
+        toast.error('เกิดข้อผิดพลาด', message);
+    } finally {
+        isDeleting.value = false;
+    }
+};
 </script>
 
 <style scoped>
