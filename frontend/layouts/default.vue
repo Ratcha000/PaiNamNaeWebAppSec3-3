@@ -197,7 +197,7 @@
                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
-                                <span class="font-medium text-blue-600">{{ user.firstName }}</span>
+                                <span class="font-medium text-blue-600">{{ user?.firstName }}</span>
                                 <svg class="w-4 h-4 text-blue-600 transition-transform duration-200" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -228,7 +228,7 @@
                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
-                                <span class="font-medium text-blue-600">{{ user.firstName }}</span>
+                                <span class="font-medium text-blue-600">{{ user?.firstName }}</span>
                                 <svg class="w-4 h-4 text-blue-600 transition-transform duration-200" fill="none"
                                     stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -343,7 +343,7 @@
                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
-                                <span class="ml-2 font-medium text-gray-700">{{ user.firstName }}</span>
+                                <span class="ml-2 font-medium text-gray-700">{{ user?.firstName }}</span>
                             </div>
                             <div class="mt-1 ml-6">
                                 <NuxtLink to="/profile" @click="closeMobileMenu"
@@ -365,7 +365,7 @@
                                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
-                                <span class="ml-2 font-medium text-gray-700">{{ user.firstName }}</span>
+                                <span class="ml-2 font-medium text-gray-700">{{ user?.firstName }}</span>
                             </div>
                             <div class="mt-1 ml-6">
                                 <NuxtLink to="/profile" @click="closeMobileMenu"

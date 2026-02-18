@@ -96,8 +96,11 @@ router.put(
     validate({ body: updateMyProfileSchema }),
     userController.updateCurrentUserProfile
 );
-
 // sf add
-
+router.delete(
+    '/me/request-delete',
+    protect,
+    userController.requestDeleteAccount
+);
 
 module.exports = router;
