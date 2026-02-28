@@ -67,53 +67,73 @@ Warning system - Blacklist system - Blacklist removal - Report filtering
 & pagination - Admin-generated notifications
 
 ------------------------------------------------------------------------
-## API ที่เกี่ยวข้องกับระบบรายงานและแจ้งเตือน
+# API ที่เกี่ยวข้องกับระบบรายงานและแจ้งเตือน
 
-1. รายงานผู้ใช้ (Report)
-ส่งรายงาน
-POST /api/reports
-Headers: Authorization: Bearer [user_token]
-Body: {
-  "reportedUserId": "...",
-  "category": "...",
-  "description": "..."
+## 1. รายงานผู้ใช้ (Report)
+
+### ส่งรายงาน
+
+POST /api/reports\
+Headers: Authorization: Bearer \[user_token\]
+
+Body: { "reportedUserId": "...", "category": "...", "description": "..."
 }
 
-ดูรายการรายงาน (admin)
-GET /api/reports?status=pending&page=1&limit=10
-Headers: Authorization: Bearer [admin_token]
+------------------------------------------------------------------------
 
-ดูรายละเอียดรายงาน (admin)
-GET /api/reports/:reportId
-Headers: Authorization: Bearer [admin_token]
+### ดูรายการรายงาน (admin)
 
-ประเมินรายงาน (review)
-PATCH /api/reports/:reportId/review
-Headers: Authorization: Bearer [admin_token]
-Body: {
-  "severity": "warning" | "blacklist",
-  "adminNote": "..."
-}
+GET /api/reports?status=pending&page=1&limit=10\
+Headers: Authorization: Bearer \[admin_token\]
 
-ส่งข้อความเตือน (warning)
-POST /api/reports/:reportId/send-warning
-Headers: Authorization: Bearer [admin_token]
-Body: {
-  "subject": "...",
-  "message": "..."
-}
+------------------------------------------------------------------------
 
-ดูรายชื่อผู้ถูกแบน (admin)
-GET /api/reports/admin/blacklist/users
-Headers: Authorization: Bearer [admin_token]
+### ดูรายละเอียดรายงาน (admin)
 
-ยกเลิกการแบน (admin)
-PATCH /api/reports/admin/:userId/remove-blacklist
-Headers: Authorization: Bearer [admin_token]
+GET /api/reports/:reportId\
+Headers: Authorization: Bearer \[admin_token\]
 
-ดู notification ของตัวเอง
-GET /api/notifications
-Headers: Authorization: Bearer [user_token]
+------------------------------------------------------------------------
+
+### ประเมินรายงาน (review)
+
+PATCH /api/reports/:reportId/review\
+Headers: Authorization: Bearer \[admin_token\]
+
+Body: { "severity": "warning" \| "blacklist", "adminNote": "..." }
+
+------------------------------------------------------------------------
+
+### ส่งข้อความเตือน (warning)
+
+POST /api/reports/:reportId/send-warning\
+Headers: Authorization: Bearer \[admin_token\]
+
+Body: { "subject": "...", "message": "..." }
+
+------------------------------------------------------------------------
+
+### ดูรายชื่อผู้ถูกแบน (admin)
+
+GET /api/reports/admin/blacklist/users\
+Headers: Authorization: Bearer \[admin_token\]
+
+------------------------------------------------------------------------
+
+### ยกเลิกการแบน (admin)
+
+PATCH /api/reports/admin/:userId/remove-blacklist\
+Headers: Authorization: Bearer \[admin_token\]
+
+------------------------------------------------------------------------
+
+## 2. Notification
+
+### ดู notification ของตัวเอง
+
+GET /api/notifications\
+Headers: Authorization: Bearer \[user_token\]
+------------------------------------------------------------------------
 
 # Pai Nam Nae - A Safe Ride Sharing App
 
