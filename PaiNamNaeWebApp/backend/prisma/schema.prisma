@@ -58,6 +58,8 @@ enum NotificationType {
   VERIFICATION
   BOOKING
   ROUTE
+  REPORT_WARNING   
+  ACCOUNT_BANNED   
 }
 
 model User {
@@ -93,11 +95,41 @@ model User {
   deletedAt             DateTime?
   scheduledDeleteAt     DateTime?
 
+  isBlacklisted     Boolean  @default(false)
+  blacklistReason   String?  @db.Text
+  blacklistedAt     DateTime?
+  reportsSubmitted  Report[] @relation("ReportedByUser")
+  reportsReceived   Report[] @relation("ReportedUser")
+  adminReports      Report[] @relation("AdminReports")
+
   @@index([role])
   @@index([isActive])
   @@index([isVerified])
   @@index([createdAt])
   @@index([scheduledDeleteAt])
+}
+
+model Report {
+  id                String   @id @default(cuid())
+  reporterId        String
+  reporter          User     @relation("ReportedByUser", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId    String
+  reportedUser      User     @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  category          String
+  description       String   @db.Text
+  status            String   @default("pending")
+  actionTaken       String?
+  severity          String?
+  adminNote         String?  @db.Text
+  adminId           String?
+  admin             User?    @relation("AdminReports", fields: [adminId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  resolvedAt        DateTime?
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([adminId])
+  @@index([status])
 }
 
 model DriverVerification {
@@ -133,6 +165,7 @@ model Notification {
   link      String?
   metadata  Json?            @db.Json
 
+  relatedId String?
   readAt    DateTime?
   createdAt DateTime         @default(now())
   adminReviewedAt DateTime?
