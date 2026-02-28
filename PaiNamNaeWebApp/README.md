@@ -1,3 +1,120 @@
+# Report & Blacklist System - Update Summary
+
+##  Database (Prisma Schema)
+
+### 1. Added to `Notification` model
+
+-   relatedId
+-   readAt
+-   createdAt
+-   adminReviewedAt
+
+### 2. Added to `User` model
+
+-   isBlacklisted (Boolean, default: false)
+-   blacklistReason (Text, optional)
+-   blacklistedAt (DateTime, optional)
+
+### 3. Added Relations
+
+-   reportsSubmitted (ReportedByUser)
+-   reportsReceived (ReportedUser)
+-   adminReports (AdminReports)
+
+------------------------------------------------------------------------
+
+##  New Validation File
+
+### `backend/src/validations/report.validation.js`
+
+Added schemas: - createReportSchema - reviewReportSchema -
+sendWarningSchema - listReportsQuerySchema
+
+------------------------------------------------------------------------
+
+##  New Service File
+
+### `backend/src/services/report.service.js`
+
+Added functions: - submitReport - listReports - getReportDetail -
+reviewReport - sendWarningMessage - getBlacklistedUsers -
+removeBlacklist
+
+------------------------------------------------------------------------
+
+##  New Controller File
+
+### `backend/src/controllers/report.controller.js`
+
+Added endpoints: - submitReport - listReports - getReportDetail -
+reviewReport - sendWarningMessage - getBlacklistedUsers -
+removeBlacklist
+
+------------------------------------------------------------------------
+
+##  Updated Notification Service
+
+### `services/notification.service.js`
+
+Added function: - createNotificationByAdminSimple
+
+------------------------------------------------------------------------
+
+##  Summary
+
+This update introduces: - User reporting system - Admin review system -
+Warning system - Blacklist system - Blacklist removal - Report filtering
+& pagination - Admin-generated notifications
+
+------------------------------------------------------------------------
+## API ที่เกี่ยวข้องกับระบบรายงานและแจ้งเตือน
+
+1. รายงานผู้ใช้ (Report)
+ส่งรายงาน
+POST /api/reports
+Headers: Authorization: Bearer [user_token]
+Body: {
+  "reportedUserId": "...",
+  "category": "...",
+  "description": "..."
+}
+
+ดูรายการรายงาน (admin)
+GET /api/reports?status=pending&page=1&limit=10
+Headers: Authorization: Bearer [admin_token]
+
+ดูรายละเอียดรายงาน (admin)
+GET /api/reports/:reportId
+Headers: Authorization: Bearer [admin_token]
+
+ประเมินรายงาน (review)
+PATCH /api/reports/:reportId/review
+Headers: Authorization: Bearer [admin_token]
+Body: {
+  "severity": "warning" | "blacklist",
+  "adminNote": "..."
+}
+
+ส่งข้อความเตือน (warning)
+POST /api/reports/:reportId/send-warning
+Headers: Authorization: Bearer [admin_token]
+Body: {
+  "subject": "...",
+  "message": "..."
+}
+
+ดูรายชื่อผู้ถูกแบน (admin)
+GET /api/reports/admin/blacklist/users
+Headers: Authorization: Bearer [admin_token]
+
+ยกเลิกการแบน (admin)
+PATCH /api/reports/admin/:userId/remove-blacklist
+Headers: Authorization: Bearer [admin_token]
+
+ดู notification ของตัวเอง
+GET /api/notifications
+Headers: Authorization: Bearer [user_token]
+
 # Pai Nam Nae - A Safe Ride Sharing App
 
 <!-- A safe ride-sharing application with a **Nuxt.js** frontend and **Express.js** backend, powered by **Prisma** ORM and **PostgreSQL**. -->
