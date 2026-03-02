@@ -3,10 +3,8 @@ import tailwindcssVite from "@tailwindcss/vite";
 export default defineNuxtConfig({
   compatibilityDate: "2025-05-15",
 
-
   ssr: false,
 
-  
   nitro: {
     preset: "static"
   },
@@ -17,7 +15,7 @@ export default defineNuxtConfig({
     public: {
       apiBase:
         process.env.NUXT_PUBLIC_API_BASE_URL ||
-        "https://painamnaewebappsec3-3-production.up.railway.app/api",
+         "https://painamnaewebappsec3-3-production.up.railway.app/api", // ✅ ต้องมี /api
       googleMapsApiKey:
         process.env.NUXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
     }

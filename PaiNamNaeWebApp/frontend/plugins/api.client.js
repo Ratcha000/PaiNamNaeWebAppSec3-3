@@ -18,23 +18,26 @@ export default defineNuxtPlugin(() => {
     },
 
     onResponse({ response }) {
-      if (response._data && Object.prototype.hasOwnProperty.call(response._data, 'data')) {
-        response._data = response._data.data
+      const body = response._data
+
+      if (
+        body &&
+        typeof body === 'object' &&
+        Object.prototype.hasOwnProperty.call(body, 'data')
+      ) {
+        response._data = Object.prototype.hasOwnProperty.call(body, 'pagination')
+          ? { data: body.data, pagination: body.pagination }
+          : body.data
       }
     },
-    // onResponse({ response }) {
-    //   const b = response._data
-    //   if (b && typeof b === 'object' && Object.prototype.hasOwnProperty.call(b, 'data')) {
-    //     response._data = Object.prototype.hasOwnProperty.call(b, 'pagination')
-    //       ? { data: b.data, pagination: b.pagination }   
-    //       : b.data                                       
-    //   }
-    // },
 
     onResponseError({ response }) {
       let body = response?._data
+
       if (typeof body === 'string') {
-        try { body = JSON.parse(body) } catch { }
+        try {
+          body = JSON.parse(body)
+        } catch {}
       }
 
       const msg =
