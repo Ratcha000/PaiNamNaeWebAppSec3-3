@@ -58,20 +58,6 @@ export default defineNuxtPlugin(() => {
         response?.statusText ||
         'Request failed'
 
-      /* 🔥 ถ้าโดน 403 → blacklist → เด้งออก */
-     if (status === 403) {
-  const token = useCookie('token')
-
-  alert('บัญชีของคุณถูกระงับ')
-
-  setTimeout(() => {
-    token.value = null
-    navigateTo('/login')
-  }, 2000)
-
-  return
-}
-
       throw createError({
         statusCode: status || 500,
         statusMessage: msg,
