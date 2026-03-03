@@ -26,7 +26,9 @@ const buildWhere = (opts = {}) => {
                 : { readAt: null })
             : {}),
         ...(typeof adminReviewed === 'boolean'
-            ? (adminReviewed ? { adminReviewedAt: { not: null } } : { adminReviewedAt: null })
+            ? (adminReviewed
+                ? { adminReviewedAt: { not: null } }
+                : { adminReviewedAt: null })
             : {}),
         ...((createdFrom || createdTo)
             ? {
@@ -46,6 +48,10 @@ const buildWhere = (opts = {}) => {
             : {}),
     };
 };
+
+/* ================================
+   LIST - USER
+================================ */
 
 const listMyNotifications = async (ownerId, opts = {}) => {
     const {
@@ -83,6 +89,10 @@ const listMyNotifications = async (ownerId, opts = {}) => {
     };
 };
 
+/* ================================
+   LIST - ADMIN
+================================ */
+
 const listNotificationsAdmin = async (opts = {}) => {
     const {
         page = 1,
@@ -106,7 +116,15 @@ const listNotificationsAdmin = async (opts = {}) => {
             take,
             select: {
                 ...baseSelect,
-                user: { select: { id: true, email: true, username: true, firstName: true, lastName: true } },
+                user: {
+                    select: {
+                        id: true,
+                        email: true,
+                        username: true,
+                        firstName: true,
+                        lastName: true
+                    }
+                },
             },
         }),
     ]);
@@ -122,27 +140,69 @@ const listNotificationsAdmin = async (opts = {}) => {
     };
 };
 
+/* ================================
+   GET BY ID
+================================ */
+
 const getMyNotificationById = async (id, ownerId) => {
     const n = await prisma.notification.findUnique({
         where: { id },
         select: baseSelect,
     });
+
     if (!n || n.userId !== ownerId) {
         throw new ApiError(404, 'Notification not found');
     }
+
     return n;
 };
 
+/* ================================
+   CREATE (ADMIN)
+================================ */
+
 const createNotificationByAdmin = async (payload) => {
-    const user = await prisma.user.findUnique({ where: { id: payload.userId }, select: { id: true } });
+    const {
+        userId,
+        type,
+        title,
+        message,
+        body,
+        link = null,
+        metadata = null,
+        relatedId = null,
+    } = payload;
+
+    if (!userId || !type || !title) {
+        throw new ApiError(400, 'Missing required fields');
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true }
+    });
+
     if (!user) throw new ApiError(404, 'User not found');
 
     const created = await prisma.notification.create({
-        data: payload,
+        data: {
+            userId,
+            type,
+            title,
+            body: body || message, // รองรับทั้ง message และ body
+            link,
+            metadata,
+            relatedId,
+        },
         select: baseSelect,
     });
+
     return created;
 };
+
+/* ================================
+   MARK READ / UNREAD
+================================ */
 
 const markRead = async (id, ownerId) => {
     const n = await prisma.notification.findUnique({ where: { id } });
@@ -182,8 +242,13 @@ const markAllRead = async (ownerId) => {
         where: { userId: ownerId, readAt: null },
         data: { readAt: new Date() },
     });
+
     return { updated: result.count };
 };
+
+/* ================================
+   DELETE
+================================ */
 
 const deleteMyNotification = async (id, ownerId) => {
     const n = await prisma.notification.findUnique({ where: { id } });
@@ -201,27 +266,40 @@ const deleteNotificationByAdmin = async (id) => {
     return { id };
 };
 
+/* ================================
+   COUNT
+================================ */
+
 const countUnread = async (ownerId) => {
     const total = await prisma.notification.count({
         where: { userId: ownerId, readAt: null },
     });
+
     return { unread: total };
 };
 
-const createNotificationByAdminSimple = async (data) => {
-  const { userId, type, title, message, relatedId } = data;
-  return prisma.notification.create({
-    data: {
-      userId,
-      type,
-      title,
-      message,
-      relatedId,
-      createdAt: new Date()
-    }
-  });
-};
+/* ================================
+   SIMPLE CREATE
+================================ */
 
+const createNotificationByAdminSimple = async (data) => {
+    const { userId, type, title, message, relatedId } = data;
+
+    if (!userId || !type || !title || !message) {
+        throw new ApiError(400, 'Missing required fields');
+    }
+
+    return prisma.notification.create({
+        data: {
+            userId,
+            type,
+            title,
+            body: message, // แก้ถูกต้องแล้ว
+            relatedId,
+        },
+        select: baseSelect,
+    });
+};
 
 module.exports = {
     listMyNotifications,

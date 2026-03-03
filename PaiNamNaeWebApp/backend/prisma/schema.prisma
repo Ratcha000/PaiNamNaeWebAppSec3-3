@@ -61,6 +61,10 @@ enum NotificationType {
   REPORT_WARNING   
   ACCOUNT_BANNED   
 }
+enum UserStatus {
+  ACTIVE
+  BLACKLISTED
+}
 
 model User {
   id                    String   @id @default(cuid())

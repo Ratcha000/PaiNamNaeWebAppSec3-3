@@ -1,4 +1,4 @@
-import { useCookie } from '#app'
+import { useCookie, navigateTo } from '#app'
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()
@@ -7,6 +7,9 @@ export default defineNuxtPlugin(() => {
     baseURL: config.public.apiBase,
     credentials: 'include',
 
+    /* ======================
+       REQUEST
+    ====================== */
     async onRequest({ options }) {
       const token = useCookie('token').value
       if (token) {
@@ -17,6 +20,9 @@ export default defineNuxtPlugin(() => {
       }
     },
 
+    /* ======================
+       RESPONSE SUCCESS
+    ====================== */
     onResponse({ response }) {
       const body = response._data
 
@@ -31,6 +37,9 @@ export default defineNuxtPlugin(() => {
       }
     },
 
+    /* ======================
+       RESPONSE ERROR
+    ====================== */
     onResponseError({ response }) {
       let body = response?._data
 
@@ -40,6 +49,8 @@ export default defineNuxtPlugin(() => {
         } catch {}
       }
 
+      const status = response?.status
+
       const msg =
         body?.message ||
         body?.error?.message ||
@@ -47,8 +58,22 @@ export default defineNuxtPlugin(() => {
         response?.statusText ||
         'Request failed'
 
+      /* 🔥 ถ้าโดน 403 → blacklist → เด้งออก */
+     if (status === 403) {
+  const token = useCookie('token')
+
+  alert('บัญชีของคุณถูกระงับ')
+
+  setTimeout(() => {
+    token.value = null
+    navigateTo('/login')
+  }, 2000)
+
+  return
+}
+
       throw createError({
-        statusCode: response?.status || 500,
+        statusCode: status || 500,
         statusMessage: msg,
         data: body,
       })
