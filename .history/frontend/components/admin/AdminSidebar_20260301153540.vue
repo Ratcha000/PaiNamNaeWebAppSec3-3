@@ -29,7 +29,7 @@
 
         <NuxtLink to="/admin/users/report"
             class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600">
-            Report Management
+            Report
         </NuxtLink>
     </div>
 </div>

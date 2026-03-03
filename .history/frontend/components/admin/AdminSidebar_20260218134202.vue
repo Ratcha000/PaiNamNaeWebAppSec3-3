@@ -9,31 +9,11 @@
 
             <!-- Menu Items -->
             <nav class="px-3 space-y-1">
-                <!-- User Management -->
-<div class="group">
-    <button @click="toggleSubmenu('user-menu')"
-        class="sidebar-item w-full flex items-center justify-between gap-3 px-3 py-2.5 text-gray-700 rounded-lg hover:bg-blue-50">
-        
-        <div class="flex items-center gap-3">
-            <i class="w-6 text-lg text-center text-gray-500 fas fa-user"></i>
-            <span class="sidebar-text">User Management</span>
-        </div>
-
-        <i class="text-xs transition-transform fas fa-chevron-down sidebar-text"
-            id="user-menu-icon"></i>
-    </button>
-
-    <!-- Submenu -->
-    <div id="user-menu" class="hidden mt-1 ml-12 space-y-1 sidebar-text">
-        
-
-        <NuxtLink to="/admin/users/report"
-            class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600">
-            Report Management
-        </NuxtLink>
-    </div>
-</div>
-
+                <NuxtLink to="/admin/users"
+                    class="sidebar-item flex items-center gap-3 px-3 py-2.5 text-gray-700 rounded-lg hover:bg-blue-50">
+                    <i class="w-6 text-lg text-center text-gray-500 fas fa-user"></i>
+                    <span class="sidebar-text">User Management</span>
+                </NuxtLink>
 
                 <NuxtLink to="/admin/vehicles"
                     class="sidebar-item flex items-center gap-3 px-3 py-2.5 text-gray-700 rounded-lg hover:bg-blue-50"

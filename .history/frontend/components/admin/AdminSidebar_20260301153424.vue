@@ -25,11 +25,14 @@
 
     <!-- Submenu -->
     <div id="user-menu" class="hidden mt-1 ml-12 space-y-1 sidebar-text">
-        
+        <NuxtLink to="/admin/users"
+            class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600">
+            User List
+        </NuxtLink>
 
         <NuxtLink to="/admin/users/report"
             class="block px-3 py-2 text-sm text-gray-600 hover:text-blue-600">
-            Report Management
+            Report
         </NuxtLink>
     </div>
 </div>
