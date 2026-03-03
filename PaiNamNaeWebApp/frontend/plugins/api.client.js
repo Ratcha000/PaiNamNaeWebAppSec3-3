@@ -49,6 +49,7 @@ export default defineNuxtPlugin(() => {
         } catch {}
       }
 
+
       const status = response?.status
 
       const msg =
@@ -57,6 +58,13 @@ export default defineNuxtPlugin(() => {
         body?.error ||
         response?.statusText ||
         'Request failed'
+
+        //fai
+          if (status === 403) {
+    if (process.client) {
+      window.dispatchEvent(new CustomEvent('account-banned'))
+    }
+  }
 
       throw createError({
         statusCode: status || 500,
