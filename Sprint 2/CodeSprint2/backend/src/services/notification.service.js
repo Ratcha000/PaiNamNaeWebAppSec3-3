@@ -208,6 +208,62 @@ const countUnread = async (ownerId) => {
     return { unread: total };
 };
 
+//add sprint2 black ing
+/** 
+const createNotificationByAdminSimple = async (data) => {
+  const { userId, type, title, message, relatedId } = data;
+  return prisma.notification.create({
+    data: {
+      userId,
+      type,
+      title,
+      message,
+      relatedId,
+      createdAt: new Date()
+    }
+  });
+};
+*/
+const createNotificationByAdminSimple = async (data) => {
+    const { userId, type, title, message, relatedId } = data;
+
+    if (!userId || !type || !title || !message) {
+        throw new ApiError(400, 'Missing required fields');
+    }
+
+    return prisma.notification.create({
+        data: {
+            userId,
+            type,
+            title,
+            body: message, // แก้ถูกต้องแล้ว
+            relatedId,
+        },
+        select: baseSelect,
+    });
+};
+
+const sendNotification = async ({ userId, type, title, message, metadata = {} }) => {
+  try {
+    const notification = await prisma.notification.create({
+      data: {
+        userId,
+        type,
+        title,
+        body: message,  
+        metadata: metadata ? JSON.stringify(metadata) : null,
+        
+      }
+    });
+
+    console.log('✅ Notification sent to user:', userId);
+    return notification;
+  } catch (error) {
+    console.error('❌ Error sending notification:', error.message);
+    throw error;
+  }
+};
+
 module.exports = {
     listMyNotifications,
     listNotificationsAdmin,
@@ -220,4 +276,6 @@ module.exports = {
     deleteNotificationByAdmin,
     countUnread,
     adminMarkRead,
+    createNotificationByAdminSimple,
+    sendNotification,
 };

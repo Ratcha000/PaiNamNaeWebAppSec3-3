@@ -235,11 +235,15 @@ const createBooking = async (data, passengerId) => {
       throw new ApiError(400, 'Not enough seats available on this route.');
     }
 
+    //คำนวณ totalPrice
+    const totalPrice = data.numberOfSeats * route.pricePerSeat;
+
     const booking = await tx.booking.create({
       data: {
         routeId: data.routeId,
         passengerId,
         numberOfSeats: data.numberOfSeats,
+        totalPrice: totalPrice, 
         pickupLocation: data.pickupLocation,
         dropoffLocation: data.dropoffLocation,
       },
@@ -330,6 +334,8 @@ const updateBookingStatus = async (id, status, userId) => {
     throw new ApiError(403, 'Forbidden');
   }
 
+  console.log(`📝 Updating booking ${id} status to: ${status}`);
+
   return prisma.$transaction(async (tx) => {
     const updated = await tx.booking.update({
       where: { id },
@@ -358,10 +364,12 @@ const updateBookingStatus = async (id, status, userId) => {
           metadata: { kind: 'BOOKING_STATUS', bookingId: id, routeId: booking.route.id, status: 'REJECTED' }
         }
       });
-
     }
 
+    // ✅✅✅ เพิ่มส่วนนี้: สร้าง Payment เมื่อ CONFIRMED ✅✅✅
     if (status === BookingStatus.CONFIRMED) {
+      console.log('✅ Booking CONFIRMED - Creating payment...');
+      
       // 🔔 แจ้งเตือน Passenger เมื่อถูกยืนยัน
       await tx.notification.create({
         data: {
@@ -372,7 +380,61 @@ const updateBookingStatus = async (id, status, userId) => {
           metadata: { kind: 'BOOKING_STATUS', bookingId: id, routeId: booking.route.id, status: 'CONFIRMED' }
         }
       });
+
+      // ✅ ตรวจสอบว่ามี Payment อยู่แล้วหรือยัง
+      const existingPayment = await tx.payment.findFirst({
+        where: { bookingId: booking.id }
+      });
+
+      if (!existingPayment) {
+        // คำนวณยอดเงิน
+        const numberOfSeats = booking.numberOfSeats || 1;
+        const pricePerSeat = booking.route?.pricePerSeat || 0;
+        const amount = numberOfSeats * pricePerSeat;
+
+        console.log('💰 Creating payment:', {
+          bookingId: booking.id,
+          driverId: userId,
+          passengerId: booking.passengerId,
+          numberOfSeats,
+          pricePerSeat,
+          amount
+        });
+
+        // สร้าง Payment
+        const newPayment = await tx.payment.create({
+          data: {
+            bookingId: booking.id,
+            driverId: userId,
+            passengerId: booking.passengerId,
+            amount: amount,
+            status: 'pending',
+            verificationStatus: 'pending'
+          }
+        });
+
+        console.log('✅ Payment created successfully:', newPayment.id, 'Amount:', amount);
+
+        // แจ้งเตือนผู้โดยสารว่ามีรายการชำระเงิน
+        await tx.notification.create({
+          data: {
+            userId: booking.passengerId,
+            type: 'BOOKING',
+            title: 'มีรายการชำระเงินใหม่',
+            body: `กรุณาชำระเงินจำนวน ${amount} บาท`,
+            metadata: {
+              kind: 'PAYMENT_CREATED',
+              paymentId: newPayment.id,
+              bookingId: booking.id,
+              amount: amount
+            }
+          }
+        });
+      } else {
+        console.log('💰 Payment already exists:', existingPayment.id);
+      }
     }
+
     return updated;
   });
 };

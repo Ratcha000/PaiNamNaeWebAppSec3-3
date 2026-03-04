@@ -58,6 +58,9 @@ enum NotificationType {
   VERIFICATION
   BOOKING
   ROUTE
+  REPORT_WARNING   
+  ACCOUNT_BANNED 
+  PAYMENT_VERIFICATION  
 }
 
 model User {
@@ -93,11 +96,47 @@ model User {
   deletedAt             DateTime?
   scheduledDeleteAt     DateTime?
 
+  isBlacklisted     Boolean  @default(false)
+  blacklistReason   String?  @db.Text
+  blacklistedAt     DateTime?
+  driverProfile     DriverProfile?
+
+  reportsSubmitted  Report[] @relation("ReportedByUser")
+  adminBlacklists   BlacklistedNationalId[] @relation("AdminBlacklists")
+  reportsReceived   Report[] @relation("ReportedUser")
+  adminReports      Report[] @relation("AdminReports")
+
+  driverPayments    Payment[]   @relation("DriverPayments")
+  passengerPayments Payment[]   @relation("PassengerPayments")
+
   @@index([role])
   @@index([isActive])
   @@index([isVerified])
   @@index([createdAt])
   @@index([scheduledDeleteAt])
+}
+
+model Report {
+  id                String   @id @default(cuid())
+  reporterId        String
+  reporter          User     @relation("ReportedByUser", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUserId    String
+  reportedUser      User     @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  category          String
+  description       String   @db.Text
+  status            String   @default("pending")
+  actionTaken       String?
+  severity          String?
+  adminNote         String?  @db.Text
+  adminId           String?
+  admin             User?    @relation("AdminReports", fields: [adminId], references: [id])
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  resolvedAt        DateTime?
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([adminId])
+  @@index([status])
 }
 
 model DriverVerification {
@@ -133,6 +172,7 @@ model Notification {
   link      String?
   metadata  Json?            @db.Json
 
+  relatedId String?
   readAt    DateTime?
   createdAt DateTime         @default(now())
   adminReviewedAt DateTime?
@@ -209,10 +249,83 @@ model Booking {
   passenger       User          @relation("PassengerBookings", fields: [passengerId], references: [id], onDelete: Cascade)
   numberOfSeats   Int
   status          BookingStatus @default(PENDING)
+  totalPrice      Float
   cancelledAt     DateTime?
   cancelledBy     String?       // 'PASSENGER' | 'DRIVER' | 'ADMIN'
   cancelReason    CancelReason?
   pickupLocation  Json          @db.Json
   dropoffLocation Json          @db.Json
   createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  payments        Payment[] 
+
+  @@index([routeId])
+  @@index([passengerId])
+}
+
+model Payment {
+  id                String      @id @default(cuid())
+  bookingId         String        
+  booking           Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  driverId          String
+  driver            User        @relation("DriverPayments", fields: [driverId], references: [id], onDelete: Cascade)
+  
+  passengerId       String
+  passenger         User        @relation("PassengerPayments", fields: [passengerId], references: [id], onDelete: Cascade)
+  
+  amount            Float       // จำนวนเงินที่ต้องชำระ
+  paymentMethod     String?     @default("transfer") 
+  submittedAt       DateTime?   
+  status            String      @default("pending") // pending, completed, verified, rejected
+  
+  
+  qrCodeUrl         String?     // QR Code ของคนขับ (ชำระเงินไป)
+  
+  // ข้อมูลจากส่วน Passenger อัปโหลด
+  receiptImageUrl   String?     // ลิงก์รูปสลิป
+  ocrData           Json?       // {amount, date, referenceNumber}
+  
+  // ข้อมูลการตรวจสอบจาก Driver
+  verificationStatus String     @default("pending") // pending, approved, rejected
+  verificationNote  String?     // หมายเหตุของคนขับ
+  verifiedAt        DateTime?   // เวลาที่ยืนยัน
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  @@index([bookingId])
+  @@index([driverId])
+  @@index([passengerId])
+}
+
+model DriverProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  
+  paymentMethod     String?   // "promptpay" | "transfer" | null
+  qrCodeUrl         String?   // URL ของ QR Code (จาก Cloudinary)
+  bankInfo          Json?     // { bankName, accountNumber, accountName }
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model BlacklistedNationalId {
+  id                String   @id @default(cuid())
+  nationalIdNumber  String   @unique
+  reason            String?
+  severity          String   @default("warning")
+  adminId           String
+  admin             User     @relation("AdminBlacklists", fields: [adminId], references: [id], onDelete: Restrict)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([nationalIdNumber])
+  @@index([adminId])
 }
