@@ -5,7 +5,7 @@
 
 ## หน้าแรกของระบบ (สำหรับผู้ดูแลระบบ)
 
-![หน้าแรกแอดมิน](img/admin)
+![หน้าแรกแอดมิน](img/admin.png)
 
 เมื่อผู้ดูแลระบบ (Admin) เข้าสู่เว็บไซต์  
 ระบบจะแสดงหน้าแรกของแพลตฟอร์ม ซึ่งประกอบด้วย:
@@ -20,7 +20,7 @@
 
 ## การเข้าสู่ Dashboard สำหรับ Admin
 
-![dash](img/dash)
+![dash](img/dash.png)
 
 1. หลังจากเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์ Admin
 2. ให้คลิกที่เมนูโปรไฟล์ด้านขวาบน (ชื่อผู้ใช้งาน เช่น "System")
@@ -32,7 +32,7 @@
 
 ## หน้า Dashboard ของ Admin
 
-![usermana](img/Usermanagement)
+![usermana](img/Usermanagement.png)
 
 ในหน้า Dashboard ผู้ดูแลระบบสามารถ:
 
@@ -48,12 +48,12 @@
 
 ## การเข้าสู่ หน้า Report สำหรับ Admin
 
-![report](img/report)
+![report](img/report.png)
 
 หน้า Report Management เป็นหน้าสำหรับผู้ดูแลระบบ (Admin)
 ใช้ในการตรวจสอบและจัดการรายงานการกระทำผิดของผู้ใช้งานภายในระบบ
 
-![level](img/level)
+![level](img/level.png)
 
 ในคอลัมน์ "จัดการ" ผู้ดูแลสามารถ:
 
@@ -68,7 +68,7 @@
 
 ## การเข้าสู่ หน้า Blacklist สำหรับ Admin
 
-![black](img/Blacklist)
+![black](img/Blacklist.png)
 
 หากผู้ใช้มีคะแนนความผิดสะสมเกินเกณฑ์ที่กำหนด:
 
