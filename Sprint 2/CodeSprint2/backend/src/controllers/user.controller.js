@@ -57,6 +57,7 @@ const getMyUser = asyncHandler(async (req, res) => {
 
 })
 const createUser = asyncHandler(async (req, res) => {
+    const blacklistService = require('../services/blacklist.service');
     const userData = req.body;
 
     if (!req.files || !req.files.nationalIdPhotoUrl || !req.files.selfiePhotoUrl) {
@@ -72,6 +73,12 @@ const createUser = asyncHandler(async (req, res) => {
     // เพิ่ม URL ของรูปภาพเข้าไปในข้อมูลที่จะบันทึก
     userData.nationalIdPhotoUrl = nationalIdResult.url;
     userData.selfiePhotoUrl = selfieResult.url;
+
+    // ✅ เช็คเลขบัตรว่าถูกแบนไหม
+    const isBlacklisted = await blacklistService.checkBlacklistedNationalId(userData.nationalIdNumber);
+    if (isBlacklisted) {
+      throw new ApiError(403, 'เลขบัตรประชาชนนี้ถูกแบนแล้ว ไม่สามารถสมัครใหม่ได้');
+    }
 
     const newUser = await userService.createUser(userData);
 

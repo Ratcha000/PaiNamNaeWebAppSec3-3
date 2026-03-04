@@ -17,8 +17,12 @@ const protect = asyncHandler(async (req, res, next) => {
             // Attach user to the request object
             req.user = {
                 sub: decoded.sub,
+                id: decoded.id || decoded.sub,  // ✅ เพิ่มบรรทัดนี้
+                userId: decoded.userId || decoded.id || decoded.sub,  // ✅ เพิ่มบรรทัดนี้
                 role: decoded.role,
             };
+
+            console.log('✅ Auth user:', req.user);  // ✅ เพิ่มบรรทัดนี้
 
             next();
         } catch (error) {
