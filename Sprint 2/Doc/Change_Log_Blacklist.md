@@ -14,3 +14,6 @@
 
 ## 03/03/69
 - Updated: แก้ไขและปรับปรุง Frontend หน้า **Report** และ **Blacklist** รัชช กันเทพา
+
+## 04/03/69
+- Updated: แก้ไขและปรับปรุง Frontend หน้า **Report** และ **Blacklist** รัชช กันเทพา
