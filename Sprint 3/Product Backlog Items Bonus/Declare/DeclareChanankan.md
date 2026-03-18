@@ -6,11 +6,6 @@
 
 AI ถูกใช้เพื่อช่วยในเรื่องต่อไปนี้
 
-- อธิบายโครงสร้างการเขียน **Function** และการใช้งาน **async/await**
-- อธิบายการทำงานของ **middleware, controller และ service**
-- แนะนำการจัดโครงสร้าง **Route / Controller / Service** ใน Node.js และ Express
-- ช่วยตรวจสอบ **syntax และรูปแบบโค้ด** ให้เป็นไปตามมาตรฐาน
-- แนะนำการออกแบบ **Field ใน Database** และการใช้งาน **Prisma**
-- ให้คำแนะนำเกี่ยวกับการเลือกใช้ **HTTP Method** และการวาง **middleware ใน routes**
-- อธิบายการทำงานของ **cron job** และการเรียกใช้งานใน `server.js`
-- ช่วยตรวจสอบและอธิบาย **logic ของระบบ** เช่นระบบ **Blacklist** และ **Report**
+- ช่วยดู Flow การทำงานในการทำ Adapt Blueprint
+- ช่วยสืบฃค้นว่ามีการ Support ด้านใดบ้าง
+- ช่วยดู Database
