@@ -1,0 +1,627 @@
+<template>
+    <div>
+        <AdminHeader />
+        <AdminSidebar />
+
+        <main id="main-content" class="main-content mt-16 ml-0 lg:ml-[280px] p-6 min-h-screen">
+            <div class="mx-auto max-w-7xl">
+                <!-- Back -->
+                <div class="mb-8">
+                    <NuxtLink :to="`/admin/routes/${route.params.id}`"
+                        class="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>ย้อนกลับ</span>
+                    </NuxtLink>
+                </div>
+
+                <!-- Title -->
+                <div class="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-2xl font-semibold text-gray-800">แก้ไขเส้นทาง (แอดมิน)</h1>
+                        <span class="text-sm text-gray-500">อัปเดตข้อมูลเส้นทางสำหรับผู้ขับและรถที่เลือก</span>
+                    </div>
+                </div>
+
+                <!-- Card -->
+                <div class="flex w-full overflow-hidden bg-white border border-gray-300 rounded-lg shadow-lg">
+                    <main class="flex-1 p-6 sm:p-8">
+                        <form @submit.prevent="handleSubmit" class="space-y-10">
+                            <!-- ส่วนเลือก Driver / Vehicle (อ้างอิง UX จาก driver-verifications/create.vue) -->
+                            <section class="space-y-4">
+                                <h2 class="text-lg font-semibold text-gray-800">ผู้ขับขี่และรถยนต์</h2>
+
+                                <!-- เลือกผู้ขับ -->
+                                <div class="relative">
+                                    <label class="block mb-2 text-sm font-medium text-gray-700">ค้นหาผู้ขับ (อีเมล /
+                                        ชื่อ / Username)</label>
+                                    <input v-model.trim="driverQuery" @input="onSearchDrivers" type="text"
+                                        placeholder="เช่น user@gmail.com หรือ ชื่อ"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    <div v-if="showDriverList"
+                                        class="absolute z-20 w-full mt-1 overflow-auto bg-white border rounded-md shadow max-h-60">
+                                        <button v-for="u in driverResults" :key="u.id" type="button"
+                                            @click="selectDriver(u)"
+                                            class="w-full px-3 py-2 text-left hover:bg-blue-50">
+                                            <div class="text-sm font-medium text-gray-800">
+                                                {{ u.firstName }} {{ u.lastName }}
+                                                <span v-if="u.username" class="text-xs text-gray-500">(@{{ u.username
+                                                    }})</span>
+                                            </div>
+                                            <div class="text-xs text-gray-500">{{ u.email }}</div>
+                                        </button>
+                                        <div v-if="!isSearchingDrivers && driverResults.length === 0"
+                                            class="px-3 py-2 text-sm text-gray-500">
+                                            ไม่พบผู้ใช้ที่ตรงกับคำค้น
+                                        </div>
+                                    </div>
+                                    <p v-if="!form.driverId" class="mt-2 text-sm text-amber-600">
+                                        * ต้องเลือกผู้ขับจากรายการ
+                                    </p>
+                                </div>
+
+                                <!-- เลือกรถ -->
+                                <div>
+                                    <label class="block mb-2 text-sm font-medium text-gray-700">เลือกรถของผู้ขับ</label>
+                                    <select v-model="form.vehicleId"
+                                        :disabled="!form.driverId || vehicleOptions.length === 0"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100">
+                                        <option disabled value="">— กรุณาเลือก —</option>
+                                        <option v-for="v in vehicleOptions" :key="v.id" :value="v.id">
+                                            {{ v.vehicleModel }} ({{ v.vehicleType }}) • {{ v.licensePlate || '—' }}
+                                        </option>
+                                    </select>
+                                    <p v-if="form.driverId && vehicleOptions.length === 0"
+                                        class="mt-2 text-sm text-gray-500">
+                                        * ผู้ขับรายนี้ยังไม่มีรถในระบบ
+                                    </p>
+                                </div>
+                            </section>
+
+                            <!-- ข้อมูลเส้นทาง (วางตำแหน่งอินพุตตามหน้า detail) -->
+                            <section class="space-y-6">
+                                <h2 class="text-lg font-semibold text-gray-800">ข้อมูลเส้นทาง</h2>
+
+                                <!-- แผนที่พรีวิว -->
+                                <div>
+                                    <h3 class="mb-2 text-sm font-semibold text-gray-700">แผนที่เส้นทาง</h3>
+                                    <div class="overflow-hidden border border-gray-300 rounded-lg">
+                                        <div ref="mapEl" class="w-full" style="height: 360px;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Start / End -->
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <!-- Start -->
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">จุดเริ่มต้น</label>
+                                        <div class="space-y-2">
+                                            <input v-model="form.startLocation.name" type="text"
+                                                placeholder="ชื่อสถานที่"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <input v-model="form.startLocation.address" type="text"
+                                                placeholder="ที่อยู่"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <input v-model.number="form.startLocation.lat" type="number" step="any"
+                                                    placeholder="lat"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <input v-model.number="form.startLocation.lng" type="number" step="any"
+                                                    placeholder="lng"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                            <button type="button" @click="openPicker('start')"
+                                                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                                เลือกจากแผนที่
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- End -->
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">จุดปลายทาง</label>
+                                        <div class="space-y-2">
+                                            <input v-model="form.endLocation.name" type="text" placeholder="ชื่อสถานที่"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <input v-model="form.endLocation.address" type="text" placeholder="ที่อยู่"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <input v-model.number="form.endLocation.lat" type="number" step="any"
+                                                    placeholder="lat"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <input v-model.number="form.endLocation.lng" type="number" step="any"
+                                                    placeholder="lng"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                            <button type="button" @click="openPicker('end')"
+                                                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                                เลือกจากแผนที่
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Waypoints -->
+                                <div>
+                                    <h3 class="mb-2 text-sm font-semibold text-gray-700">จุดแวะระหว่างทาง</h3>
+                                    <div class="space-y-4">
+                                        <div v-for="(w, idx) in form.waypoints" :key="idx"
+                                            class="p-3 border rounded-md">
+                                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                <input v-model="w.name" type="text" placeholder="ชื่อจุดแวะ"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <input v-model="w.address" type="text" placeholder="ที่อยู่"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <input v-model.number="w.lat" type="number" step="any" placeholder="lat"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                <input v-model.number="w.lng" type="number" step="any" placeholder="lng"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                            <div class="flex gap-2 mt-2">
+                                                <button type="button" @click="openPicker('waypoint', idx)"
+                                                    class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                                                    เลือกจากแผนที่
+                                                </button>
+                                                <button type="button" @click="removeWaypoint(idx)"
+                                                    class="px-3 py-1.5 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50">
+                                                    ลบจุดแวะ
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" @click="addWaypoint"
+                                            class="px-4 py-2 text-sm bg-gray-100 border rounded-md hover:bg-gray-200">
+                                            + เพิ่มจุดแวะ
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- เวลา/ราคา/ที่นั่ง/เงื่อนไข -->
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <div class="sm:col-span-1">
+                                        <label
+                                            class="block mb-1 text-xs font-medium text-gray-600">วัน-เวลาออกเดินทาง</label>
+                                        <input v-model="departureLocal" type="datetime-local"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block mb-1 text-xs font-medium text-gray-600">ราคา/ที่นั่ง
+                                            (บาท)</label>
+                                        <input v-model.number="form.pricePerSeat" type="number" min="0"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="block mb-1 text-xs font-medium text-gray-600">ที่นั่งคงเหลือ</label>
+                                        <input v-model.number="form.availableSeats" type="number" min="0"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        class="block mb-1 text-xs font-medium text-gray-600">เงื่อนไขการเดินทาง</label>
+                                    <textarea v-model="form.conditions" rows="4"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="ระบุเงื่อนไขเพิ่มเติม เช่น ไม่เปิดเพลงเสียงดัง ฯลฯ"></textarea>
+                                </div>
+                            </section>
+
+                            <!-- ปุ่ม (อ้างอิง create – ยกเลิก/บันทึก) -->
+                            <div class="flex justify-end gap-4 pt-4">
+                                <button type="button" :disabled="isSubmitting" @click="goBack"
+                                    class="px-6 py-3 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 disabled:opacity-50">
+                                    ยกเลิก
+                                </button>
+                                <button type="submit" :disabled="!canSubmit || isSubmitting"
+                                    class="flex items-center px-6 py-3 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed">
+                                    <svg v-if="isSubmitting" class="w-5 h-5 mr-3 -ml-1 text-white animate-spin"
+                                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                    {{ isSubmitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+                                </button>
+                            </div>
+                        </form>
+                    </main>
+                </div>
+            </div>
+        </main>
+
+        <!-- Overlay สำหรับ Mobile -->
+        <div id="overlay" class="fixed inset-0 z-40 hidden bg-black bg-opacity-50 lg:hidden"
+            @click="closeMobileSidebar"></div>
+
+        <!-- Modal: Map Picker -->
+        <transition name="modal-fade">
+            <div v-if="picker.show" class="fixed inset-0 z-[1000] bg-black/60 flex items-center justify-center"
+                @click.self="closePicker">
+                <div class="bg-white rounded-xl w-[95%] max-w-3xl overflow-hidden shadow-xl">
+                    <div class="p-4 border-b">
+                        <div class="font-semibold text-gray-800">
+                            เลือกตำแหน่ง{{ picker.mode === 'start' ? 'จุดเริ่มต้น' : picker.mode === 'end' ?
+                            'จุดปลายทาง' : 'จุดแวะ' }}
+                        </div>
+                    </div>
+                    <div class="p-0">
+                        <div ref="pickerMapEl" class="w-full" style="height: 70vh;"></div>
+                        <div class="flex items-center justify-between p-4 border-t">
+                            <div class="text-sm text-gray-700 truncate">
+                                <span class="font-medium">ตำแหน่ง:</span>
+                                <span class="truncate">lat: {{ picker.lat?.toFixed(6) || '-' }}, lng: {{
+                                    picker.lng?.toFixed(6) || '-' }}</span>
+                            </div>
+                            <button
+                                class="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                :disabled="picker.lat == null || picker.lng == null" @click="applyPicker">
+                                ใช้ตำแหน่งนี้
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+    </div>
+</template>
+
+<script setup>
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { useRoute, useRuntimeConfig, useCookie, navigateTo } from '#app'
+import AdminHeader from '~/components/admin/AdminHeader.vue'
+import AdminSidebar from '~/components/admin/AdminSidebar.vue'
+import dayjs from 'dayjs'
+import 'dayjs/locale/th'
+import buddhistEra from 'dayjs/plugin/buddhistEra'
+import { useToast } from '~/composables/useToast'
+
+dayjs.locale('th'); dayjs.extend(buddhistEra)
+
+definePageMeta({ middleware: ['admin-auth'] })
+useHead({
+    title: 'แก้ไขเส้นทาง • Admin',
+    link: [{ rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css' }]
+})
+
+const { toast } = useToast()
+const route = useRoute()
+const config = useRuntimeConfig()
+const token = useCookie('token')?.value || (process.client ? localStorage.getItem('token') : '')
+
+/* ----------------- ฟอร์ม ----------------- */
+const form = reactive({
+    driverId: '',
+    vehicleId: '',
+    startLocation: { lat: null, lng: null, name: '', address: '' },
+    endLocation: { lat: null, lng: null, name: '', address: '' },
+    waypoints: [],
+    availableSeats: 0,
+    pricePerSeat: 0,
+    conditions: '',
+    departureTimeISO: '' // เก็บค่าจริงแบบ ISO
+})
+
+const departureLocal = ref('') // สำหรับ input datetime-local
+
+const canSubmit = computed(() => {
+    const s = form.startLocation, e = form.endLocation
+    return form.driverId && form.vehicleId &&
+        s.lat != null && s.lng != null && e.lat != null && e.lng != null &&
+        departureLocal.value
+})
+
+/* ------------- Driver search (เหมือนหน้า create DV) ------------- */
+const driverQuery = ref('')
+const lastChosenLabel = ref('')
+const driverResults = ref([])
+const isSearchingDrivers = ref(false)
+const showDriverList = computed(() => driverQuery.value && (isSearchingDrivers.value || driverResults.value.length > 0))
+let driverTimer = null
+
+async function onSearchDrivers() {
+    if (driverQuery.value !== lastChosenLabel.value) form.driverId = ''
+    clearTimeout(driverTimer)
+    const q = driverQuery.value.trim()
+    if (!q) { driverResults.value = []; return }
+    driverTimer = setTimeout(async () => {
+        try {
+            isSearchingDrivers.value = true
+            const res = await $fetch('/users/admin', {
+                baseURL: config.public.apiBase,
+                headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                query: { q, page: 1, limit: 10 }
+            })
+            driverResults.value = res?.data || []
+        } catch (e) {
+            console.error('search drivers error:', e)
+            driverResults.value = []
+        } finally {
+            isSearchingDrivers.value = false
+        }
+    }, 300)
+}
+
+function selectDriver(u) {
+    form.driverId = u.id
+    const label = `${u.firstName || ''} ${u.lastName || ''} (${u.email})`
+    driverQuery.value = label
+    lastChosenLabel.value = label
+    driverResults.value = []
+    fetchVehiclesForDriver(u.id)
+}
+
+/* ------------- Vehicle options ------------- */
+const vehicleOptions = ref([])
+async function fetchVehiclesForDriver(driverId) {
+    try {
+        vehicleOptions.value = []
+        form.vehicleId = ''
+        if (!driverId) return
+        const data = await $fetch(`/vehicles/admin/user/${driverId}`, {
+            baseURL: config.public.apiBase,
+            headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+        })
+        vehicleOptions.value = data?.data || []
+    } catch (e) {
+        console.error('vehicles error:', e)
+        vehicleOptions.value = []
+    }
+}
+
+/* ----------------- Waypoints helpers ----------------- */
+function addWaypoint() {
+    form.waypoints.push({ lat: null, lng: null, name: '', address: '' })
+}
+function removeWaypoint(i) {
+    form.waypoints.splice(i, 1)
+    drawPreview()
+}
+
+/* ----------------- Map preview + picker ----------------- */
+const mapEl = ref(null)
+let gmap = null, mapReady = false
+let startMarker = null, endMarker = null, waypointMarkers = []
+
+function initMap() {
+    if (!mapEl.value || gmap) return
+    gmap = new google.maps.Map(mapEl.value, {
+        center: { lat: 13.7563, lng: 100.5018 }, zoom: 6,
+        mapTypeControl: false, streetViewControl: false, fullscreenControl: true
+    })
+    mapReady = true
+    setTimeout(() => google.maps.event.trigger(gmap, 'resize'), 0)
+}
+
+function clearPreview() {
+    if (startMarker) { startMarker.setMap(null); startMarker = null }
+    if (endMarker) { endMarker.setMap(null); endMarker = null }
+    waypointMarkers.forEach(m => m.setMap(null))
+    waypointMarkers = []
+}
+
+function drawPreview() {
+    if (!mapReady) return
+    clearPreview()
+    const bounds = new google.maps.LatLngBounds()
+
+    // start/end
+    if (isNum(form.startLocation.lat) && isNum(form.startLocation.lng)) {
+        startMarker = new google.maps.Marker({ map: gmap, position: { lat: +form.startLocation.lat, lng: +form.startLocation.lng }, label: 'A' })
+        bounds.extend(startMarker.getPosition())
+    }
+    if (isNum(form.endLocation.lat) && isNum(form.endLocation.lng)) {
+        endMarker = new google.maps.Marker({ map: gmap, position: { lat: +form.endLocation.lat, lng: +form.endLocation.lng }, label: 'B' })
+        bounds.extend(endMarker.getPosition())
+    }
+    // waypoints
+    form.waypoints.forEach((w, i) => {
+        if (isNum(w.lat) && isNum(w.lng)) {
+            const m = new google.maps.Marker({
+                map: gmap, position: { lat: +w.lat, lng: +w.lng },
+                icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                title: w.name || `Waypoint ${i + 1}`
+            })
+            waypointMarkers.push(m)
+            bounds.extend(m.getPosition())
+        }
+    })
+
+    if (!bounds.isEmpty()) {
+        gmap.fitBounds(bounds)
+        setTimeout(() => { google.maps.event.trigger(gmap, 'resize'); gmap.fitBounds(bounds) }, 0)
+    }
+}
+
+function isNum(v) { return typeof v === 'number' && !Number.isNaN(v) }
+
+/* ---- Picker modal ---- */
+const picker = reactive({ show: false, mode: null, index: null, lat: null, lng: null })
+const pickerMapEl = ref(null)
+let pickerMap = null, pickerMarker = null
+
+function openPicker(mode, index = null) {
+    picker.show = true
+    picker.mode = mode
+    picker.index = index
+    picker.lat = null; picker.lng = null
+    nextTick(() => {
+        const center = { lat: 13.7563, lng: 100.5018 }
+        const base =
+            mode === 'start' ? form.startLocation :
+                mode === 'end' ? form.endLocation :
+                    form.waypoints[index] || {}
+        const c = (isNum(base.lat) && isNum(base.lng)) ? { lat: +base.lat, lng: +base.lng } : center
+        pickerMap = new google.maps.Map(pickerMapEl.value, {
+            center: c, zoom: isNum(base.lat) ? 15 : 6,
+            mapTypeControl: false, streetViewControl: false, fullscreenControl: false
+        })
+        pickerMap.addListener('click', (e) => {
+            setPickerMarker(e.latLng)
+            picker.lat = e.latLng.lat(); picker.lng = e.latLng.lng()
+        })
+    })
+}
+function setPickerMarker(latlng) {
+    if (pickerMarker) return pickerMarker.setPosition(latlng)
+    pickerMarker = new google.maps.Marker({ map: pickerMap, position: latlng, draggable: true })
+    pickerMarker.addListener('dragend', (e) => { picker.lat = e.latLng.lat(); picker.lng = e.latLng.lng() })
+}
+function closePicker() {
+    picker.show = false; picker.mode = null; picker.index = null
+    pickerMarker = null; pickerMap = null
+}
+function applyPicker() {
+    if (picker.lat == null || picker.lng == null) return
+    if (picker.mode === 'start') {
+        form.startLocation.lat = picker.lat; form.startLocation.lng = picker.lng
+    } else if (picker.mode === 'end') {
+        form.endLocation.lat = picker.lat; form.endLocation.lng = picker.lng
+    } else if (picker.mode === 'waypoint' && picker.index != null) {
+        const w = form.waypoints[picker.index]
+        if (w) { w.lat = picker.lat; w.lng = picker.lng }
+    }
+    closePicker()
+    drawPreview()
+}
+
+/* ----------------- Load existing route ----------------- */
+async function fetchRoute() {
+    try {
+        const res = await $fetch(`/routes/admin/${route.params.id}`, {
+            baseURL: config.public.apiBase,
+            headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+        })
+        const r = res?.data
+        if (!r) throw new Error('Invalid response')
+
+        // map into form
+        form.driverId = r.driver?.id || ''
+        form.vehicleId = r.vehicle?.id || ''
+        form.startLocation = {
+            lat: r.startLocation?.lat ?? null,
+            lng: r.startLocation?.lng ?? null,
+            name: r.startLocation?.name || '',
+            address: r.startLocation?.address || ''
+        }
+        form.endLocation = {
+            lat: r.endLocation?.lat ?? null,
+            lng: r.endLocation?.lng ?? null,
+            name: r.endLocation?.name || '',
+            address: r.endLocation?.address || ''
+        }
+        form.waypoints = Array.isArray(r.waypoints?.used) ? r.waypoints.used.map(p => ({
+            lat: p.lat ?? null, lng: p.lng ?? null, name: p.name || '', address: p.address || ''
+        })) : Array.isArray(r.waypoints) ? r.waypoints.map(p => ({
+            lat: p.lat ?? null, lng: p.lng ?? null, name: p.name || '', address: p.address || ''
+        })) : []
+
+        form.availableSeats = r.availableSeats ?? 0
+        form.pricePerSeat = r.pricePerSeat ?? 0
+        form.conditions = r.conditions || ''
+        form.departureTimeISO = r.departureTime || ''
+
+        // datetime-local needs local time format
+        departureLocal.value = r.departureTime ? dayjs(r.departureTime).format('YYYY-MM-DDTHH:mm') : ''
+
+        // preload vehicles for selected driver (if any)
+        if (form.driverId) await fetchVehiclesForDriver(form.driverId)
+
+        // init map preview (after script ready)
+        if (window.google?.maps) {
+            initMap(); nextTick(drawPreview)
+        }
+    } catch (e) {
+        console.error('fetch route error:', e)
+        toast.error('เกิดข้อผิดพลาด', e?.data?.message || 'โหลดข้อมูลเส้นทางไม่สำเร็จ')
+    }
+}
+
+/* ----------------- Submit (PUT) ----------------- */
+const isSubmitting = ref(false)
+async function handleSubmit() {
+    if (!canSubmit.value) {
+        toast.warning('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบถ้วน')
+        return
+    }
+    isSubmitting.value = true
+    try {
+        const payload = {
+            driverId: form.driverId,
+            vehicleId: form.vehicleId,
+            startLocation: { ...form.startLocation },
+            endLocation: { ...form.endLocation },
+            waypoints: form.waypoints.map(w => ({ lat: +w.lat, lng: +w.lng, name: w.name || '', address: w.address || '' })),
+            departureTime: new Date(departureLocal.value).toISOString(),
+            availableSeats: +form.availableSeats,
+            pricePerSeat: +form.pricePerSeat,
+            conditions: form.conditions || ''
+        }
+
+        await $fetch(`/routes/admin/${route.params.id}`, {
+            baseURL: config.public.apiBase,
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: payload
+        })
+
+        toast.success('บันทึกสำเร็จ', 'อัปเดตข้อมูลเส้นทางแล้ว')
+        navigateTo(`/admin/routes/${route.params.id}`).catch(() => { })
+    } catch (e) {
+        console.error('update route error:', e)
+        toast.error('เกิดข้อผิดพลาด', e?.data?.message || 'ไม่สามารถบันทึกการแก้ไขได้')
+    } finally {
+        isSubmitting.value = false
+    }
+}
+
+/* ----------------- Layout helpers ----------------- */
+function goBack() { navigateTo(`/admin/routes/${route.params.id}`) }
+function closeMobileSidebar() {
+    const sidebar = document.getElementById('sidebar')
+    const overlay = document.getElementById('overlay')
+    if (!sidebar || !overlay) return
+    sidebar.classList.remove('mobile-open'); overlay.classList.add('hidden')
+}
+
+/* ----------------- Mount: load gmaps + data ----------------- */
+const GMAPS_CB = '__gmapsReadyAdminRouteEdit__'
+onMounted(async () => {
+    // load gmaps script if needed (เช่นเดียวกับหน้าอื่น ๆ)
+    if (!window.google?.maps) {
+        const s = document.createElement('script')
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${config.public.googleMapsApiKey}&libraries=places,geometry&callback=${GMAPS_CB}`
+        s.async = true; s.defer = true
+        window[GMAPS_CB] = () => {
+            try { delete window[GMAPS_CB] } catch { }
+            initMap(); drawPreview()
+        }
+        document.head.appendChild(s)
+    } else {
+        initMap()
+    }
+
+    await fetchRoute()
+})
+
+</script>
+
+<style scoped>
+.main-content {
+    transition: margin-left 0.3s ease;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+    transition: opacity .25s;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+    opacity: 0;
+}
+</style>

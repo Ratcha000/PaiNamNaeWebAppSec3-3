@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Booking" ALTER COLUMN "totalPrice" DROP DEFAULT,
+ALTER COLUMN "updatedAt" DROP DEFAULT;
