@@ -5,7 +5,7 @@
 
 ## หน้าแรกของระบบ (สำหรับผู้ดูแลระบบ)
 
-![หน้าแรกแอดมิน](admin.png)
+![หน้าแรกแอดมิน](../Images/admin.png)
 
 เมื่อผู้ดูแลระบบ (Admin) เข้าสู่เว็บไซต์  
 ระบบจะแสดงหน้าแรกของแพลตฟอร์ม ซึ่งประกอบด้วย:
@@ -20,7 +20,7 @@
 
 ## การเข้าสู่ Dashboard สำหรับ Admin
 
-![dash](dash.png)
+![dash](../Images/dash.png)
 
 1. หลังจากเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์ Admin
 2. ให้คลิกที่เมนูโปรไฟล์ด้านขวาบน (ชื่อผู้ใช้งาน เช่น "System")
@@ -32,7 +32,7 @@
 
 ## หน้า Dashboard ของ Admin
 
-![Usermana](Usermanagement.png)
+![Usermana](../Images/Usermanagement.png)
 
 ในหน้า Dashboard ผู้ดูแลระบบสามารถ:
 
@@ -49,7 +49,7 @@
 
 ## การเข้าสู่ หน้า Incident Management สำหรับ Admin
 
-![IncidentMana](IncidentManagement.png)
+![IncidentMana](../Images/IncidentManagement.png)
 
 หน้า Incident Management เป็นหน้าสำหรับผู้ดูแลระบบ (Admin)
 ใช้ในการตรวจสอบและอัปเดตสถานะรายงานเหตุการณ์ของผู้ใช้งานภายในระบบ
@@ -58,7 +58,7 @@
 
 - กดปุ่ม "View" เพื่อเข้าสู่หน้าการเปลี่ยนสถานะของรายงาน
 
-![Update](UpdateReportStatus.png)
+![Update](../Images/UpdateReportStatus.png)
 
 ในหน้า Incident Detail ผู้ดูแลระบบสามารถ:
 
